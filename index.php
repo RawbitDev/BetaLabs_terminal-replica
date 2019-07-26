@@ -22,7 +22,7 @@
                 <div>Please enable the execution of JavaScript in your browser for the terminal to work.<br /></div>
             </noscript>
             <div id="cursor"></div>
-            <input id="input" type="text" name="command" value="" />
+            <input id="input" type="text" name="command" value="" autocomplete="off"/>
         </div>
     </div>
     <script src="js/terminal.js"></script>

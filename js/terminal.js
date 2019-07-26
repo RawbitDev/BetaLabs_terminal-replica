@@ -1,9 +1,12 @@
-//General declarations
-var t_terminal = document.getElementById("terminal");
-var t_cursor = document.getElementById("cursor");
-var t_input = document.getElementById("input");
+/********** [ SETTINGS ] **********/
+
 //General settings
-var t_writeSpeed = 0.15;
+var t_header = "BetaLabsOS [Version 1.0.0] (c) 2019 MrRawbit";
+var t_prefix = "root@BetaLabs.io:~#";
+var t_dialog = "Sind Sie sicher, dass Sie fortfahren möchten";
+var t_writeSpeed = 0.025;
+var t_maxInput = 999999;
+var t_startupPath = "./startup.txt";
 
 /********** [ GENERAL ] **********/
 
@@ -14,6 +17,32 @@ function sleep(sec) {
 
 /********** [ MAIN TERMINAL BACKEND ] **********/
 
+var t_terminal;
+var t_cursor;
+var t_input;
+var terminalDefaultContent;
+
+//Boot sequence
+async function boot() {
+    init();
+    await t_startup(); //Print the startup message
+    runCommand(await t_getln()); //Ready for first input
+}
+
+//Initialize the terminal and event listeners
+function init() {
+    t_terminal = document.getElementById("terminal");
+    t_cursor = document.getElementById("cursor");
+    t_input = document.getElementById("input");
+    terminalDefaultContent = t_terminal.innerHTML; //Save the default terminal content before the startup
+    t_input.addEventListener("focus", cursorHandler);
+    t_input.addEventListener("blur", cursorHandler);
+    t_terminal.addEventListener("click", function() {
+        t_input.focus();
+    });
+    input.focus();
+}
+
 //Print raw to the terminal
 function t_printRaw(raw) {
     t_cursor.insertAdjacentHTML("beforebegin", raw); //Add raw infront of cursor
@@ -21,48 +50,62 @@ function t_printRaw(raw) {
 }
 
 //Get an input of the user
-async function t_getRaw() {
+async function t_getRaw(max=t_maxInput) {
     t_print(""); //Prepare temp input container
     t_input.value = "";
-    t_input.addEventListener("keyup", inputHandler); //Enable input
+    t_input.maxLength = max;
+    inputHandlerBusy = max;
+    t_input.addEventListener("keyup", inputHandler); //Enable input handler
     t_input.focus();
-    // ###
-    // ###
-    // ### Do something to wait for the return of the event handler ###
-    // ###
-    // ###
-    t_input.removeEventListener("keyup", inputHandler); //Disable input
+    while(inputHandlerBusy>0) {await sleep(0.1);} //Wait for input handler to be done
     return t_input.value;
 }
-
-// Event handler for the input
-function inputHandler(callback, event) {
+//Event handler for the input
+var inputHandlerBusy;
+function inputHandler(event) {
     event.preventDefault();
     resetCursor(); //Make sure cursor is always at the end to prevent bugs
-    t_input.value = t_input.value.replace(/<|>/gi, ""); //Remove angle brackets to prevent code injection
-    if (event.keyCode === 13) { //If return was pressed
-        // ###
-        // ###
-        // ### Do Something when return was pressed ###
-        // ###
-        // ###
+    if(inputHandlerBusy>2) {
+        t_input.value = t_input.value.replace(/<|>/gi, ""); //Remove angle brackets to prevent simple code injection
+    }
+    if (event.keyCode === 13 || inputHandlerBusy <= 0) { //If the return key was pressed
+        t_input.removeEventListener("keyup", inputHandler); //Disable input handler
+        inputHandlerBusy = 0; //Return to caller
     } else {
-        t_cursor.previousElementSibling.innerHTML = input.value;
+        t_cursor.previousElementSibling.innerHTML = t_input.value;
+        inputHandlerBusy--;
+    }
+}
+//Set cursor position to end of input field
+function resetCursor() {
+    if (t_input.setSelectionRange) { // Modern browsers
+        t_input.focus();
+        t_input.setSelectionRange(t_input.value.length, t_input.value.length);
+    } else if (t_input.createTextRange) { // IE8 and below
+        var range = t_input.createTextRange();
+        range.collapse(true);
+        range.moveEnd("character", t_input.value.length);
+        range.moveStart("character", t_input.value.length);
+        range.select();
     }
 }
 
-//Set cursor position to end of input field
-function resetCursor() {
-    var input = document.getElementById("input");
-    if (input.setSelectionRange) { // Modern browsers
-        input.focus();
-        input.setSelectionRange(input.value.length, input.value.length);
-    } else if (input.createTextRange) { // IE8 and below
-        var range = input.createTextRange();
-        range.collapse(true);
-        range.moveEnd("character", input.value.length);
-        range.moveStart("character", input.value.length);
-        range.select();
+//Event handler for blinking cursor
+var blink = false;
+async function cursorHandler(event) {
+    event.preventDefault();
+    if (event.type == "blur") {
+        t_cursor.hidden = false;
+        blink = false;
+    } else {
+        blink = true;
+    }
+    //Blinking cursor
+    while (blink == true) {
+        t_cursor.hidden = true;
+        await sleep(0.5);
+        t_cursor.hidden = false;
+        await sleep(0.5);
     }
 }
 
@@ -95,116 +138,69 @@ function t_println(message) {
 }
 
 //Write message with line break
-function t_writeln(message, sec=t_writeSpeed) {
+async function t_writeln(message, sec=t_writeSpeed) {
     t_ln();
-    t_write(message, sec);
+    await t_write(message, sec);
 }
 
-/********** [ ADDITIONAL INPUT FUNCTIONS ] **********/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Get an input of the user
-function getInput(message) {
-    if (message) {
-        t_printRaw(message);
+//Output the startup message
+async function t_startup() {
+    await sleep(2);
+    await t_write(t_header);
+    await sleep(1);
+    fileData = loadFile(t_startupPath); //Get content of the startup file
+    var lines = fileData.split('\n'); //Split it in its lines
+    for (var line=0; line<lines.length; line++) { //Print every line by line with a delay between them
+        t_println(lines[line]);
+        await sleep(0.2);
     }
-    t_printRaw("<div></div>");
-    var input = document.getElementById("input");
-    input.value = "";
-    input.addEventListener("keyup", inputHandler);
-    input.focus();
+    await sleep(1);
 }
-
-// Event handler for blinking cursor
-var blink = false;
-async function cursorHandler(event) {
-    event.preventDefault();
-    var cursor = document.getElementById("cursor");
-    if (event.type == "blur") {
-        cursor.hidden = false;
-        blink = false;
-    } else {
-        blink = true;
-    }
-    while (blink == true) {
-        cursor.hidden = true;
-        await sleep(0.5);
-        cursor.hidden = false;
-        await sleep(0.5);
-    }
-}
-
-
-function getYesNo(message) {
-    t_println(message + "[Y/n]?");
-    t_printRaw("<div></div>");
-    var input = document.getElementById("input");
-    input.value = "";
-    input.addEventListener("keyup", inputHandler);
-    input.focus();
-}
-
-// Event handler terminal focus
-function terminalHandler() {
-    document.getElementById("input").focus();
-}
-
-// Read a linked file
+//Read a linked file
 function loadFile(filePath) {
     var result = null;
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", filePath, false);
-     xmlhttp.send();
+    xmlhttp.send();
     if (xmlhttp.status === 200) {
         result = xmlhttp.responseText;
     }
     return result;
 }
 
-// Initialize the terminal
-var terminalDefaultContent;
-function init() {
-    terminalDefaultContent = document.getElementById("terminal").innerHTML;
-    var input = document.getElementById("input");
-    input.addEventListener("focus", cursorHandler);
-    input.addEventListener("blur", cursorHandler);
-    document.getElementById("terminal").addEventListener("click", terminalHandler);
-    input.focus();
+/********** [ ADDITIONAL INPUT FUNCTIONS ] **********/
+
+//Basic input dialog
+async function t_get(message=t_prefix, max=t_maxInput) {
+    t_print(message + " ");
+    return await t_getRaw(max);
 }
 
-// Startup message
-async function startup() {
-    await sleep(2);
-    t_printRaw("<div>BetaLabsOS [Version 1.0.0] (c) 2019 MrRawbit</div>");
-    await sleep(1);
-    fileData = loadFile("./startup.txt");
-    var lines = fileData.split('\n');
-    for (var line = 0; line < lines.length; line++) {
-        t_println(lines[line]);
-        await sleep(0.2);
+//Input dialog with line break
+async function t_getln(message=t_prefix, max=t_maxInput) {
+    t_ln();
+    return t_get(message, max);
+}
+
+//Yes or no dialog
+async function t_getBool(message=t_dialog) {
+    message = message.replace("?", ""); //Remove question mark
+    var input = await t_getln(message + " [Y/n]?", 1);
+    while (input.toLowerCase() != "y" && input.toLowerCase() != "n") {
+        t_println("Fehlerhafte Eingabe! Bitte erneut versuchen.");
+        input = await t_getln(message + " [Y/n]?", 1);
     }
-    await sleep(1);
+    if(input.toLowerCase() == "y") {
+        return true;
+    } else if(input.toLowerCase() == "n") {
+        return false;
+    }
 }
 
-async function main() {
-    init();
-    //await startup();
-    t_getRaw();
-    //getInput();
-}
+
+
+
+
 
 /*****************************************************************************************************/
 
@@ -215,36 +211,43 @@ async function runCommand(cmd) {
         case "restart": 
         case "reboot": 
             t_println("Rebooting. Please wait");
-            await waitT(".", 5, 0.5);
-            document.getElementById("terminal").innerHTML = terminalDefaultContent;
-            main();
+            await t_write(".....", 0.5);
+            t_terminal.innerHTML = terminalDefaultContent;
+            boot();
             break;
 
         case "shutdown": 
             t_println("Shutting down internal services");
-            await waitT(".", 3, 1);
+            await t_write("...", 1);
             t_println("Goodbye!");
             await sleep(1);
-            document.getElementById("terminal").innerHTML = "";
+            t_terminal.innerHTML = "";
             break;
 
         case "clear": 
-            document.getElementById("terminal").innerHTML = terminalDefaultContent;
+            t_terminal.innerHTML = terminalDefaultContent;
             init();
-            getInput("<div>root@BetaLabs.io:~# </div>");
+            runCommand(await t_getln());
             break;
 
         case "ls": 
             t_println("This is the return value of the ls command!");
-            getInput("<br /><div>root@BetaLabs.io:~# </div>");
+            runCommand(await t_getln());
             break;
 
 
         default: // Über JSON File falls kein 'Aktiver' Command (also wenn nur text zurück)
             t_println("Command not found: " + cmd);
-            getInput("<br /><div>root@BetaLabs.io:~# </div>");
+            runCommand(await t_getln()); //Ready for the next input
             break;
     }
 }
 
-main();
+/*****************************************************************************************************/
+
+
+
+
+
+
+boot();
