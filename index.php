@@ -8,6 +8,7 @@
     <meta name="description" content="Welcome to BetaLabs.io!">
     <meta name="author" content="MrRawbit@BetaLabs.io">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="./favicon.ico" type="image/x-icon">
 </head>
 
 <body>
