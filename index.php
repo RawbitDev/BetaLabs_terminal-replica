@@ -6,7 +6,11 @@
     <meta charset="utf-8">
     <title>HQ | BetaLabs.io</title>
     <meta name="description" content="Welcome to BetaLabs.io!">
-    <meta name="author" content="MrRawbit@BetaLabs.io">
+    <meta name="author" content="Hey@BetaLabs.io">
+	<meta property="og:title" content="HQ | BetaLabs.io" />
+	<meta property="og:url" content="https://www.BetaLabs.io/" />
+	<meta property="og:description" content="Welcome to BetaLabs.io!">
+	<meta property="og:image" content="https://www.BetaLabs.io/preview.png" />
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" href="./favicon.ico" type="image/x-icon">
 </head>
