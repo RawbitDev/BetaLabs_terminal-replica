@@ -4,6 +4,7 @@
 
 <head>
     <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
     <title>HQ | BetaLabs.io</title>
     <meta name="description" content="Welcome to BetaLabs.io!">
     <meta name="author" content="Hey@BetaLabs.io">
@@ -11,6 +12,10 @@
 	<meta property="og:url" content="https://www.BetaLabs.io/" />
 	<meta property="og:description" content="Welcome to BetaLabs.io!">
 	<meta property="og:image" content="https://www.BetaLabs.io/preview.png" />
+	<meta name="theme-color" content="#000000">
+	<meta name="msapplication-navbutton-color" content="#000000">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" href="./favicon.ico" type="image/x-icon">
 </head>
