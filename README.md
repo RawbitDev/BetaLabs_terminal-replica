@@ -1,2 +1,2 @@
-# BetaLabs
-BetaLabs.io Website
+# BetaLabs_terminal-replica
+This is another part of the upcoming BetaLabs.io website. Work in progess...
